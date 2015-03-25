@@ -26,6 +26,7 @@ class DatabaseBuilder:
         # for computing document frequency
         self.doc_term_dic = {}
 
+        # for store or read data from file
         self.bs_data = shelve.open('BooleanSearch.db')
         self.doc_data = {}
         self.term_postings = {}
@@ -84,19 +85,17 @@ class DatabaseBuilder:
         :param terms:
         :return:
         """
-        # computing term frequency
-        counter = Counter()
-        for term in terms:
-            counter[term] += 1
+        # for computing term frequency
+        counter = Counter(terms)
 
         # store postings and tf for each term
         length = len(terms)
         for term, freq in counter.iteritems():
             tf = 1 + 1.0 * freq / length
-            if term not in self.term_postings.iterkeys():
-                term_obj = Term()
-            else:
+            if term in self.term_postings.iterkeys():
                 term_obj = self.term_postings[term]
+            else:
+                term_obj = Term()
             term_obj.add_posting(doc_id, tf)
             self.term_postings[term] = term_obj
 
@@ -126,7 +125,6 @@ class Term:
     This should be the value of term_postings dictionary whose key is the term itself
     """
     def __init__(self):
-        # self.term_dic = {'df': 0, 'posting': posting}
         self.df = 0
         self.postings = {}
 
@@ -190,7 +188,7 @@ class SearchEngine:
     def get_score(self, doc_id, query_list):
         """
         compute accumulated score for terms in a document
-        :return:
+        :return: the final score for a document
         """
         score = 0
         for term in query_list:
@@ -228,7 +226,7 @@ class SearchEngine:
             j = i + 1
             while j < len(hit_indices) and hit_indices[j] - hit_indices[j - 1] < 60:
                 j += 1
-            # test on whether reach the begining or end of the document
+            # test on whether reach the beginning or end of the document
             left = 0 if hit_indices[i] - 30 < 0 else hit_indices[i] - 30
             right = len(doc_text) if hit_indices[j-1] + 30 > len(doc_text) else hit_indices[j-1] + 30
             # substring the text
@@ -268,7 +266,6 @@ class SearchEngine:
             print '\tScore:\t%.3f' % score
             print 'Title:\t', doc_dic['title']
             print 'Author:\t%s' % ', '.join(doc_dic['authors'])
-
             print 'snippets: \n\t%s' % '\n\t'.join(snippets)
             print '--------------------\n'
             rank += 1
