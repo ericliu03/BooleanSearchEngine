@@ -11,7 +11,7 @@ from nltk.tokenize import RegexpTokenizer
 from nltk.stem.porter import PorterStemmer
 
 
-class BooleanSearch:
+class DatabaseBuilder:
     """
     Build the search database from json file
     provide search interface for boolean search
@@ -110,6 +110,54 @@ class BooleanSearch:
             df = log(1 + 1.0 * len(term.get_postings()) / doc_length)
             term.set_df(df)
 
+    @staticmethod
+    def get_info_from_file(file_name):
+        """load json from a file to python objective"""
+        with open(file_name) as outfile:
+            docs = load(outfile)
+            return docs
+
+
+class Term:
+    """
+    A term class contains a term's attributes: it's df score and a posting list
+    the posting list is a dictionary, whose key is the document id and value is
+    correspond term frequency score
+    This should be the value of term_postings dictionary whose key is the term itself
+    """
+    def __init__(self):
+        # self.term_dic = {'df': 0, 'posting': posting}
+        self.df = 0
+        self.postings = {}
+
+    def set_df(self, df):
+        self.df = df
+
+    def add_posting(self, doc_id, tf):
+        self.postings[doc_id] = tf
+
+    def get_postings(self):
+        return self.postings.copy()
+
+    def get_df(self):
+        return self.df
+
+
+class SearchEngine:
+    def __init__(self, database=None):
+        """
+        If database is not provided, it will create a database from file 'wiki_all.txt'
+        :param database: a DatabaseBuilder Class Object
+        :return:
+        """
+        if database is None:
+            database = DatabaseBuilder('wiki_all.txt')
+            database.build_database(from_file=True)
+
+        self.term_postings = database.term_postings
+        self.pre_process = database.pre_process
+        self.doc_data = database.doc_data
+
     def search(self, query_string):
         """
         find the intersection of input term's postings, get idf
@@ -189,6 +237,20 @@ class BooleanSearch:
             i = j
         return snippets
 
+    @staticmethod
+    def dic_intersect(postings1, postings2):
+        """
+        find intersection between two dictionaries using their keys
+        :param postings1: a dic
+        :param postings2: a dic
+        :return: the intersect dictionary
+        """
+        result = {}
+        for posting in postings1.iterkeys():
+            if posting in postings2:
+                result[posting] = 1
+        return result
+
     def display_result(self, doc_score_snippets):
         """
         display the search result, including total hits, rank, score etc.
@@ -213,60 +275,13 @@ class BooleanSearch:
             if rank > 10:
                 break
 
-    @staticmethod
-    def get_info_from_file(file_name):
-        """load json from a file to python objective"""
-        with open(file_name) as outfile:
-            docs = load(outfile)
-            return docs
-
-    @staticmethod
-    def dic_intersect(postings1, postings2):
-        """
-        find intersection between two dictionaries using their keys
-        :param postings1: a dic
-        :param postings2: a dic
-        :return: the intersect dictionary
-        """
-        result = {}
-        for posting in postings1.iterkeys():
-            if posting in postings2:
-                result[posting] = 1
-        return result
-
-
-class Term:
-    """
-    A term class contains a term's attributes: it's df score and a posting list
-    the posting list is a dictionary, whose key is the document id and value is
-    correspond term frequency score
-    This should be the value of term_postings dictionary whose key is the term itself
-    """
-    def __init__(self):
-        # self.term_dic = {'df': 0, 'posting': posting}
-        self.df = 0
-        self.postings = {}
-
-    def set_df(self, df):
-        self.df = df
-
-    def add_posting(self, doc_id, tf):
-        self.postings[doc_id] = tf
-
-    def get_postings(self):
-        return self.postings.copy()
-
-    def get_df(self):
-        return self.df
-
-
 if __name__ == "__main__":
-    BS = BooleanSearch('wiki_all.txt')
+    BS = DatabaseBuilder('wiki_all.txt')
     BS.build_database(from_file=True)
-    #BS.search("ccc")
+    SE = SearchEngine(database=BS)
     print 'Put it terms separated by space, use exit() to exit'
     while True:
         query = raw_input("Your query: ")
         if query == 'exit()':
             break
-        BS.search(query.strip())
+        SE.search(query.strip())
