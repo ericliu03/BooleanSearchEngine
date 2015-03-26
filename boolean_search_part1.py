@@ -17,19 +17,33 @@ class DatabaseBuilder:
     provide search interface for boolean search
     using tf-idf to compute score
     """
-    def __init__(self, raw_file):
-        self.doc_dics = self.get_info_from_file(raw_file)
+    def __init__(self, raw_file=None):
+        """
+        Initialize the batabase builder, if raw file, which is the wiki file, is not
+        provided, it will read the data from database file.
+        :param raw_file: the wikipedia file
+        :return: None
+        """
+
+        from_file = True
+        if raw_file is not None:
+            """if raw_file is not provided, the created database will be readed"""
+            self.doc_dics = self.get_info_from_file(raw_file)
+            # for computing document frequency
+            self.doc_term_dic = {}
+            from_file = False
+
+        # for parsing the text, used also in search engine
         self.stop_words = stopwords.words('english')
         self.stemmer = PorterStemmer()
         self.tokenizer = RegexpTokenizer(r'\w+')
-
-        # for computing document frequency
-        self.doc_term_dic = {}
 
         # for store or read data from file
         self.bs_data = shelve.open('BooleanSearch.db')
         self.doc_data = {}
         self.term_postings = {}
+
+        self.build_database(from_file=from_file)
 
     def build_database(self, from_file=True):
         """
@@ -121,7 +135,11 @@ class DatabaseBuilder:
 
     @staticmethod
     def get_info_from_file(file_name):
-        """load json from a file to python objective"""
+        """
+        load json from a file to python objective
+        here the docs is a dictionary, keys are document number and values
+        are dictionaries in which keys are 'title', 'authors' and etc.
+        """
         with open(file_name) as outfile:
             docs = load(outfile)
             return docs
@@ -284,10 +302,9 @@ class SearchEngine:
                 break
 
 if __name__ == "__main__":
-    BS = DatabaseBuilder('wiki_all.txt')
-    BS.build_database(from_file=True)
+    BS = DatabaseBuilder()
     SE = SearchEngine(database=BS)
-    print 'Put it terms separated by space, use exit() to exit'
+    print 'Put in terms separated by space, use exit() to exit.'
     while True:
         query = raw_input("Your query: ")
         if query == 'exit()':

@@ -1,0 +1,3 @@
+In this project I implemented the basic boolean search engine, including database builder and search client.
+The first running time needs you to create a database file raw wikipedia file extracted from PA1, here the name of the file is ‘wiki_all.txt’, by giving the file name to DatabaseBuilder. After the building phrase is completed (about 4 minutes, processing indicator provided), you could delete this parameter in order to read the data from the database instead of constructing again from this file.
+I provided sample code of constructing the database and the search engine, and a while true loop to service the user’s interface, which could be exited by entering ‘exit()’. 
