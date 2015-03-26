@@ -1,9 +1,9 @@
 __author__ = 'EricLiu'
 
-import shelve
 import re
-from json import load
+import shelve
 from math import log
+from json import load
 from operator import itemgetter
 from collections import Counter
 from nltk.corpus import stopwords
@@ -50,11 +50,12 @@ class DatabaseBuilder:
                 if doc_id % 10 == 0:
                     print '%0.2f%%' % (100.0 * doc_id/doc_length)
                 doc_id += 1
-                self.build_doc_dic(doc_id, doc_dic)
+
                 # process the document and add to term-posting list
                 doc_detail = doc_dic['title']+' '+doc_dic['text']
                 processed_doc = self.pre_process(doc_detail)
                 self.build_term_dic(doc_id, processed_doc)
+                self.build_doc_dic(doc_id, doc_dic)
                 # store for compute df
                 self.doc_term_dic[doc_id] = processed_doc
             self.compute_df()
@@ -75,28 +76,38 @@ class DatabaseBuilder:
         return stemmed
 
     def build_doc_dic(self, doc_id, doc_dic):
-        self.doc_data[doc_id] = doc_dic
+        """
+        build the document dictionary for displaying searching result
+        the length of the text is stored for computing tf in each document
+        :param doc_id: document ID
+        :param doc_dic: the original document dictionary
+        :return: None
+        """
+        temp_dic = {
+            'title': doc_dic['title'],
+            'authors': doc_dic['authors'],
+            'text': doc_dic['text']
+        }
+        self.doc_data[doc_id] = temp_dic
 
     def build_term_dic(self, doc_id, terms):
         """
         compute term frequency and store them to term-postings list
         for each term appears in a doc
-        :param doc_id:
-        :param terms:
-        :return:
+        :param doc_id: document ID
+        :param terms: a list of terms from parsed document text
+        :return: None
         """
         # for computing term frequency
         counter = Counter(terms)
 
         # store postings and tf for each term
-        length = len(terms)
-        for term, freq in counter.iteritems():
-            tf = 1 + 1.0 * freq / length
+        for term, raw_tf in counter.iteritems():
             if term in self.term_postings.iterkeys():
                 term_obj = self.term_postings[term]
             else:
                 term_obj = Term()
-            term_obj.add_posting(doc_id, tf)
+            term_obj.add_posting(doc_id, raw_tf)
             self.term_postings[term] = term_obj
 
     def compute_df(self):
@@ -104,10 +115,9 @@ class DatabaseBuilder:
         compute the document frequency for each term
         :return: None
         """
-        doc_length = len(self.doc_dics)
         for term in self.term_postings.itervalues():
-            df = log(1 + 1.0 * len(term.get_postings()) / doc_length)
-            term.set_df(df)
+            raw_df = len(term.get_postings())
+            term.set_df(raw_df)
 
     @staticmethod
     def get_info_from_file(file_name):
@@ -125,20 +135,20 @@ class Term:
     This should be the value of term_postings dictionary whose key is the term itself
     """
     def __init__(self):
-        self.df = 0
+        self.raw_df = 0
         self.postings = {}
 
-    def set_df(self, df):
-        self.df = df
+    def set_df(self, raw_df):
+        self.raw_df = raw_df
 
-    def add_posting(self, doc_id, tf):
-        self.postings[doc_id] = tf
+    def add_posting(self, doc_id, raw_tf):
+        self.postings[doc_id] = raw_tf
 
     def get_postings(self):
         return self.postings.copy()
 
     def get_df(self):
-        return self.df
+        return self.raw_df
 
 
 class SearchEngine:
@@ -194,7 +204,9 @@ class SearchEngine:
         for term in query_list:
             term_obj = self.term_postings[term]
             term_postings = term_obj.get_postings()
-            score += term_obj.get_df() * term_postings[doc_id]
+            tf = 1 + log(1.0 * term_postings[doc_id])
+            idf = log(1.0 * len(self.doc_data) / term_obj.get_df())
+            score += tf * idf
         return score
 
     def get_snippet(self, doc_id, terms):
@@ -253,16 +265,15 @@ class SearchEngine:
         """
         display the search result, including total hits, rank, score etc.
         :param doc_score_snippets: a tuple: doc_id, score, snippet: a string list of snippets
-        :return:
+        :return: None
         """
         sorted_docs = sorted(doc_score_snippets, key=itemgetter(1), reverse=True)
-        print len(self.term_postings)
-        print 'Total number of hits: ', len(sorted_docs)
+        print 'Total number of hits:\t', len(sorted_docs)
         print '--------------------'
         rank = 1
         for doc_id, score, snippets in sorted_docs:
             doc_dic = self.doc_data[doc_id]
-            print 'Rank:\t', rank,
+            print 'Rank:\t', rank
             print '\tScore:\t%.3f' % score
             print 'Title:\t', doc_dic['title']
             print 'Author:\t%s' % ', '.join(doc_dic['authors'])
