@@ -2,8 +2,8 @@ __author__ = 'EricLiu'
 
 import re
 import shelve
-from math import log
 from json import load
+from math import log10
 from operator import itemgetter
 from collections import Counter
 from nltk.corpus import stopwords
@@ -24,7 +24,6 @@ class DatabaseBuilder:
         :param raw_file: the wikipedia file
         :return: None
         """
-
         from_file = True
         if raw_file is not None:
             """if raw_file is not provided, the created database will be readed"""
@@ -222,8 +221,8 @@ class SearchEngine:
         for term in query_list:
             term_obj = self.term_postings[term]
             term_postings = term_obj.get_postings()
-            tf = 1 + log(1.0 * term_postings[doc_id])
-            idf = log(1.0 * len(self.doc_data) / term_obj.get_df())
+            tf = 1 + log10(1.0 * term_postings[doc_id])
+            idf = log10(1.0 * len(self.doc_data) / term_obj.get_df())
             score += tf * idf
         return score
 
@@ -292,11 +291,11 @@ class SearchEngine:
         for doc_id, score, snippets in sorted_docs:
             doc_dic = self.doc_data[doc_id]
             print 'Rank:\t', rank
-            print '\tScore:\t%.3f' % score
+            print 'Score:\t%.3f' % score
             print 'Title:\t', doc_dic['title']
             print 'Author:\t%s' % ', '.join(doc_dic['authors'])
             print 'snippets: \n\t%s' % '\n\t'.join(snippets)
-            print '--------------------\n'
+            print '\n--------------------'
             rank += 1
             if rank > 10:
                 break
