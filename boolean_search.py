@@ -250,18 +250,17 @@ class SearchEngine:
         for term, query_raw_tf in query_tf_dic.iteritems():
             term_obj = self.term_postings[term]
             term_postings = term_obj.get_postings()
-            if score_com is 'raw':
+            if score_com == 'raw':
                 # using raw tf to compute score
                 score += term_postings[doc_id]
-            elif score_com is 'vec':
+            elif score_com == 'vec':
                 # using vector space model
                 tf = 1 + log10(query_raw_tf)
                 idf = log10(1.0 * num_doc / term_obj.get_df())
                 query_weight = tf * idf
                 doc_weight = (1 + log10(1.0 * term_postings[doc_id])) / doc_length
                 score += query_weight * doc_weight
-                print "%s\t%f\t%f" % (self.doc_data[doc_id]['title'],  doc_weight, doc_length)
-            elif score_com is 'tfidf':
+            elif score_com == 'tfidf':
                 tf = 1 + log10(1.0 * term_postings[doc_id])
                 idf = log10(1.0 * len(self.doc_data) / term_obj.get_df())
                 score += tf * idf
@@ -345,7 +344,7 @@ class SearchEngine:
             print 'Rank:\t', rank
             print 'Score:\t%.3f' % score
             print 'Title:\t', doc_dic['title']
-            print 'Author:\t%s' % ', '.join(doc_dic['authors'])
+            print 'Author:\t', doc_dic['authors']
             print 'snippets: \n\t%s' % '\n\t'.join(snippets)
             print '\n--------------------'
             rank += 1
@@ -359,8 +358,11 @@ if __name__ == "__main__":
 
     print 'Put in terms separated by space, use exit() to exit.'
     while True:
-        query = raw_input("Your query: ")
-        if query == 'exit()':
+        query_type = raw_input("Your query type (raw or vec): ")
+        if query_type == 'exit()':
             break
-        # SE.search(query.strip(), score_com='tfidf')
-        SE.search(query.strip(), score_com='vec')
+        while not (query_type == 'vec' or query_type == 'raw' or query_type == 'tfidf'):
+            query_type = raw_input("only 'vec' or 'raw' could be accepted: ")
+        query = raw_input("Your query: ")
+
+        SE.search(query.strip(), score_com=query_type)
