@@ -1,8 +1,8 @@
 __author__ = 'EricLiu'
 
 import re
-import shelve
 import time
+import shelve
 from json import load
 from math import log10, sqrt
 from operator import itemgetter
@@ -119,6 +119,7 @@ class DatabaseBuilder:
         build the document dictionary for displaying searching result
         the length of the text is stored for computing tf in each document
         @Part II addition: compute the doc's length and store it in the doc dictionary
+        @bug fixed: used to sqrt twice
         :param doc_id: document ID
         :param doc_dic: the original document dictionary
         :param terms: a list contains terms from processed document
@@ -135,7 +136,7 @@ class DatabaseBuilder:
             'title': doc_dic['title'],
             'authors': doc_dic['authors'],
             'text': doc_dic['text'],
-            'length': sqrt(doc_length)
+            'length': doc_length
         }
         self.doc_data[doc_id] = temp_dic
 
@@ -259,6 +260,7 @@ class SearchEngine:
                 query_weight = tf * idf
                 doc_weight = (1 + log10(1.0 * term_postings[doc_id])) / doc_length
                 score += query_weight * doc_weight
+                print "%s\t%f\t%f" % (self.doc_data[doc_id]['title'],  doc_weight, doc_length)
             elif score_com is 'tfidf':
                 tf = 1 + log10(1.0 * term_postings[doc_id])
                 idf = log10(1.0 * len(self.doc_data) / term_obj.get_df())
@@ -361,4 +363,4 @@ if __name__ == "__main__":
         if query == 'exit()':
             break
         # SE.search(query.strip(), score_com='tfidf')
-        SE.search(query.strip(), score_com='raw')
+        SE.search(query.strip(), score_com='vec')
