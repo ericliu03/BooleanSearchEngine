@@ -2,8 +2,9 @@ __author__ = 'EricLiu'
 
 import re
 import shelve
+import time
 from json import load
-from math import log10
+from math import log10, sqrt
 from operator import itemgetter
 from collections import Counter
 from nltk.corpus import stopwords
@@ -26,7 +27,7 @@ class DatabaseBuilder:
         """
         from_file = True
         if raw_file is not None:
-            """if raw_file is not provided, the created database will be readed"""
+            # if raw_file is not provided, the created database will be read
             self.doc_dics = self.get_info_from_file(raw_file)
             # for computing document frequency
             self.doc_term_dic = {}
@@ -41,8 +42,9 @@ class DatabaseBuilder:
         self.bs_data = shelve.open('BooleanSearch.db')
         self.doc_data = {}
         self.term_postings = {}
-
+        start_time = time.time()
         self.build_database(from_file=from_file)
+        print 'Total time used: %.2f sec' % (time.time() - start_time)
 
     def build_database(self, from_file=True):
         """
@@ -60,15 +62,15 @@ class DatabaseBuilder:
             doc_id = 0
             doc_length = len(self.doc_dics)
             for doc_dic in self.doc_dics.itervalues():
-                if doc_id % 10 == 0:
+                # process display
+                if doc_id % 80 == 0:
                     print '%0.2f%%' % (100.0 * doc_id/doc_length)
                 doc_id += 1
-
                 # process the document and add to term-posting list
                 doc_detail = doc_dic['title']+' '+doc_dic['text']
                 processed_doc = self.pre_process(doc_detail)
                 self.build_term_dic(doc_id, processed_doc)
-                self.build_doc_dic(doc_id, doc_dic)
+                self.build_doc_dic(doc_id, doc_dic, processed_doc)
                 # store for compute df
                 self.doc_term_dic[doc_id] = processed_doc
             self.compute_df()
@@ -88,25 +90,12 @@ class DatabaseBuilder:
         stemmed = [self.stemmer.stem(word) for word in stop_removed]
         return stemmed
 
-    def build_doc_dic(self, doc_id, doc_dic):
-        """
-        build the document dictionary for displaying searching result
-        the length of the text is stored for computing tf in each document
-        :param doc_id: document ID
-        :param doc_dic: the original document dictionary
-        :return: None
-        """
-        temp_dic = {
-            'title': doc_dic['title'],
-            'authors': doc_dic['authors'],
-            'text': doc_dic['text']
-        }
-        self.doc_data[doc_id] = temp_dic
-
     def build_term_dic(self, doc_id, terms):
         """
         compute term frequency and store them to term-postings list
         for each term appears in a doc
+        @part II revision: I used to use 'if term in self.term_postings.iterkeys()
+        to check whether the term exists or not, apparently a mistake approach
         :param doc_id: document ID
         :param terms: a list of terms from parsed document text
         :return: None
@@ -116,12 +105,39 @@ class DatabaseBuilder:
 
         # store postings and tf for each term
         for term, raw_tf in counter.iteritems():
-            if term in self.term_postings.iterkeys():
+
+            if term in self.term_postings:
                 term_obj = self.term_postings[term]
             else:
                 term_obj = Term()
+                self.term_postings[term] = term_obj
+
             term_obj.add_posting(doc_id, raw_tf)
-            self.term_postings[term] = term_obj
+
+    def build_doc_dic(self, doc_id, doc_dic, terms):
+        """
+        build the document dictionary for displaying searching result
+        the length of the text is stored for computing tf in each document
+        @Part II addition: compute the doc's length and store it in the doc dictionary
+        :param doc_id: document ID
+        :param doc_dic: the original document dictionary
+        :param terms: a list contains terms from processed document
+        :return: None
+        """
+        doc_length = 0
+        counter = Counter(terms)
+        for raw_tf in counter.itervalues():
+            weight = 1 + log10(raw_tf)
+            doc_length += weight * weight
+
+        doc_length = sqrt(doc_length)
+        temp_dic = {
+            'title': doc_dic['title'],
+            'authors': doc_dic['authors'],
+            'text': doc_dic['text'],
+            'length': sqrt(doc_length)
+        }
+        self.doc_data[doc_id] = temp_dic
 
     def compute_df(self):
         """
@@ -169,6 +185,9 @@ class Term:
 
 
 class SearchEngine:
+    """
+    A boolean search engine provided ranking and query from given database
+    """
     def __init__(self, database=None):
         """
         If database is not provided, it will create a database from file 'wiki_all.txt'
@@ -177,17 +196,18 @@ class SearchEngine:
         """
         if database is None:
             database = DatabaseBuilder('wiki_all.txt')
-            database.build_database(from_file=True)
 
         self.term_postings = database.term_postings
         self.pre_process = database.pre_process
         self.doc_data = database.doc_data
 
-    def search(self, query_string):
+    def search(self, query_string, score_com='vec'):
         """
         find the intersection of input term's postings, get idf
         from the postings, find the word's tf and snippets
         compute the accumulated score, and display the result
+        @Part II addition: add Vector space model to compute score
+        :param score_com: the way of computing ranking score: 'vec' or 'raw'
         :param query_string: query string
         :return: None
         """
@@ -205,25 +225,47 @@ class SearchEngine:
 
         doc_score_snippet = []
         for doc_id in postings_dic.iterkeys():
-            score = self.get_score(doc_id, query_list)
+            score = self.get_score(doc_id, query_list, score_com)
             snippet = self.get_snippet(doc_id, query_list)
             doc_score_snippet.append((doc_id, score, snippet))
 
         self.display_result(doc_score_snippet)
         # return doc_score_snippet
 
-    def get_score(self, doc_id, query_list):
+    def get_score(self, doc_id, query_list, score_com='vec'):
         """
         compute accumulated score for terms in a document
-        :return: the final score for a document
+        @Part II addition: add Vector space model using cosine distance
+        :param doc_id: document ID
+        :param query_list: a list of terms from preprocessed query
+        :param score_com: the way of computing ranking score
+        :return:the final score for a document
         """
         score = 0
-        for term in query_list:
+        query_tf_dic = Counter(query_list)
+        num_doc = len(self.doc_data)
+        doc_length = self.doc_data[doc_id]['length']
+
+        for term, query_raw_tf in query_tf_dic.iteritems():
             term_obj = self.term_postings[term]
             term_postings = term_obj.get_postings()
-            tf = 1 + log10(1.0 * term_postings[doc_id])
-            idf = log10(1.0 * len(self.doc_data) / term_obj.get_df())
-            score += tf * idf
+            if score_com is 'raw':
+                # using raw tf to compute score
+                score += term_postings[doc_id]
+            elif score_com is 'vec':
+                # using vector space model
+                tf = 1 + log10(query_raw_tf)
+                idf = log10(1.0 * num_doc / term_obj.get_df())
+                query_weight = tf * idf
+                doc_weight = (1 + log10(1.0 * term_postings[doc_id])) / doc_length
+                score += query_weight * doc_weight
+            elif score_com is 'tfidf':
+                tf = 1 + log10(1.0 * term_postings[doc_id])
+                idf = log10(1.0 * len(self.doc_data) / term_obj.get_df())
+                score += tf * idf
+            else:
+                raise ValueError("the way of computing score is either 'vec' or 'raw'")
+
         return score
 
     def get_snippet(self, doc_id, terms):
@@ -232,6 +274,7 @@ class SearchEngine:
         the distance of terms in each snippets is less than 60 characters
         or this two terms would be in two different snippets
         so each snippet stored would not overlap with each other
+        @Part II revision: add a counter for counting the number of snippets, only first 5 will remain
         :param terms: a list of querying term
         :param doc_id: doc's id
         :return: a list that contains snippets in different position
@@ -250,18 +293,25 @@ class SearchEngine:
             hit_indices.append(m.start())
 
         snippets = []
-        i = 0
-        while i < len(hit_indices):
-            j = i + 1
-            while j < len(hit_indices) and hit_indices[j] - hit_indices[j - 1] < 60:
-                j += 1
+        count_snip = 0
+        left_ptr = 0
+        while left_ptr < len(hit_indices):
+            # only first 5 snippets
+            if count_snip >= 5:
+                break
+            else:
+                count_snip += 1
+
+            right_ptr = left_ptr + 1
+            while right_ptr < len(hit_indices) and hit_indices[right_ptr] - hit_indices[right_ptr - 1] < 60:
+                right_ptr += 1
             # test on whether reach the beginning or end of the document
-            left = 0 if hit_indices[i] - 30 < 0 else hit_indices[i] - 30
-            right = len(doc_text) if hit_indices[j-1] + 30 > len(doc_text) else hit_indices[j-1] + 30
+            left = 0 if hit_indices[left_ptr] - 30 < 0 else hit_indices[left_ptr] - 30
+            right = len(doc_text) if hit_indices[right_ptr-1] + 30 > len(doc_text) else hit_indices[right_ptr-1] + 30
             # substring the text
             snippet = doc_text[left:right]
             snippets.append(snippet)
-            i = j
+            left_ptr = right_ptr
         return snippets
 
     @staticmethod
@@ -301,11 +351,14 @@ class SearchEngine:
                 break
 
 if __name__ == "__main__":
+    # if you want to build a new database from json file, add a parameter to next line
     BS = DatabaseBuilder()
     SE = SearchEngine(database=BS)
+
     print 'Put in terms separated by space, use exit() to exit.'
     while True:
         query = raw_input("Your query: ")
         if query == 'exit()':
             break
-        SE.search(query.strip())
+        # SE.search(query.strip(), score_com='tfidf')
+        SE.search(query.strip(), score_com='raw')
