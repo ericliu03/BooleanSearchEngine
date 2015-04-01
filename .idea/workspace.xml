@@ -3,8 +3,6 @@
   <component name="ChangeListManager">
     <list default="true" id="87582d89-d700-42c9-bf51-73d8898d007d" name="Default" comment="">
       <change type="MODIFICATION" beforePath="$PROJECT_DIR$/BooleanSearch.db" afterPath="$PROJECT_DIR$/BooleanSearch.db" />
-      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/boolean_search_part1.py" afterPath="$PROJECT_DIR$/boolean_search_part1.py" />
-      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/.idea/workspace.xml" afterPath="$PROJECT_DIR$/.idea/workspace.xml" />
     </list>
     <ignored path="BooleanSearchEngine.iws" />
     <ignored path=".idea/workspace.xml" />
@@ -35,8 +33,8 @@
       <file leaf-file-name="boolean_search_part1.py" pinned="false" current-in-tab="true">
         <entry file="file://$PROJECT_DIR$/boolean_search_part1.py">
           <provider selected="true" editor-type-id="text-editor">
-            <state vertical-scroll-proportion="0.32659408" vertical-offset="1605" max-vertical-offset="5565">
-              <caret line="121" column="20" selection-start-line="121" selection-start-column="20" selection-end-line="121" selection-end-column="38" />
+            <state vertical-scroll-proportion="0.02332815" vertical-offset="1935" max-vertical-offset="5565">
+              <caret line="130" column="38" selection-start-line="130" selection-start-column="38" selection-end-line="130" selection-end-column="38" />
               <folding>
                 <element signature="e#24#33#0" expanded="true" />
               </folding>
@@ -356,7 +354,7 @@
   </component>
   <component name="ToolWindowManager">
     <frame x="0" y="23" width="1920" height="1057" extended-state="0" />
-    <editor active="false" />
+    <editor active="true" />
     <layout>
       <window_info id="Changes" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" weight="0.33" sideWeight="0.5" order="7" side_tool="false" content_ui="tabs" />
       <window_info id="Terminal" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" weight="0.33" sideWeight="0.5" order="7" side_tool="false" content_ui="tabs" />
@@ -370,7 +368,7 @@
       <window_info id="Application Servers" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" weight="0.33" sideWeight="0.5" order="7" side_tool="false" content_ui="tabs" />
       <window_info id="Project" active="false" anchor="left" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" weight="0.16715977" sideWeight="0.5" order="0" side_tool="false" content_ui="combo" />
       <window_info id="Python Console" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" weight="0.33" sideWeight="0.5" order="7" side_tool="false" content_ui="tabs" />
-      <window_info id="Run" active="true" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="true" weight="0.2869288" sideWeight="0.5" order="2" side_tool="false" content_ui="tabs" />
+      <window_info id="Run" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" weight="0.2869288" sideWeight="0.5" order="2" side_tool="false" content_ui="tabs" />
       <window_info id="Cvs" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" weight="0.25" sideWeight="0.5" order="4" side_tool="false" content_ui="tabs" />
       <window_info id="Message" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" weight="0.33" sideWeight="0.5" order="0" side_tool="false" content_ui="tabs" />
       <window_info id="Ant Build" active="false" anchor="right" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" weight="0.25" sideWeight="0.5" order="1" side_tool="false" content_ui="tabs" />
@@ -523,8 +521,8 @@
     </entry>
     <entry file="file://$PROJECT_DIR$/boolean_search_part1.py">
       <provider selected="true" editor-type-id="text-editor">
-        <state vertical-scroll-proportion="0.32659408" vertical-offset="1605" max-vertical-offset="5565">
-          <caret line="121" column="20" selection-start-line="121" selection-start-column="20" selection-end-line="121" selection-end-column="38" />
+        <state vertical-scroll-proportion="0.02332815" vertical-offset="1935" max-vertical-offset="5565">
+          <caret line="130" column="38" selection-start-line="130" selection-start-column="38" selection-end-line="130" selection-end-column="38" />
           <folding>
             <element signature="e#24#33#0" expanded="true" />
           </folding>

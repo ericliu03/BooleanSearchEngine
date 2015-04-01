@@ -1,3 +1,12 @@
+Part One:
 In this project I implemented the basic boolean search engine, including database builder and search client.
 The first running time needs you to create a database file raw wikipedia file extracted from PA1, here the name of the file is ‘wiki_all.txt’, by giving the file name to DatabaseBuilder. After the building phrase is completed (about 4 minutes, processing indicator provided), you could delete this parameter in order to read the data from the database instead of constructing again from this file.
 I provided sample code of constructing the database and the search engine, and a while true loop to service the user’s interface, which could be exited by entering ‘exit()’. 
+
+Part Two:
+For this part, I added two ways to compute the ranking score in function ‘get_score’ in class ‘SearchEngine’, including raw term frequency, vector space and tf-idf score. And in both function ‘search’ and ‘get_score’, I added a parameter called ‘score_com’ to control the way of the score being computed.
+In order to using vector space model, I added method to compute and store a key value pair of each document’s magnitude in the doc_data dictionary, which is in function ‘build_doc_dic’ in class ‘DatabaseBuilder’.
+In addition, I found that in function ‘build_term_dic’ of class ’DatabaseBuilder’, I used to use ‘if key in dic.iterkeys()’ to check whether the term exists or not, apparently a mistake approach. After revised to ‘if key in dic’ the building time of the whole database reduced to about 10 seconds (from 4 minutes).
+Another thing I want to specify is that if the parameter of class DatabaseBuilder is not provided, it will automatically search for file ‘BooleanSearch.db’ to get the database. But if the parameter of class SearchEngine is not given, it will call the DatabaseBuilder to build a new database from file ‘wiki_all.txt’ (default). So if you want to build a search engine from another Json file, you need to give the file name to class DatabaseBuilder to create a new database instance, then give it to class SearchEngine to create a search engine instance for searching.
+
+PS:I used to sqrt twice when computing length of documents, so I submitted late after fixing this bug.
